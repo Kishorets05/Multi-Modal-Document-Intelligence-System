@@ -3,3 +3,6 @@ uvicorn
 python-dotenv
 pydantic
 pydantic-settings
+PyMuPDF
+python-docx
+Pillow

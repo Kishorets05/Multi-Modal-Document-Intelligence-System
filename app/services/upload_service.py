@@ -7,6 +7,7 @@ from uuid import uuid4
 from fastapi import UploadFile
 
 from app.config.settings import settings
+from app.services.document_reader_service import DocumentReaderError, DocumentReaderService
 from app.utils.file_validator import FileValidationError, validate_file_extension, validate_file_size
 
 
@@ -45,7 +46,7 @@ class UploadService:
                 file_size,
             )
 
-            return {
+            upload_response = {
                 "success": True,
                 "file_id": file_id,
                 "original_name": original_name,
@@ -54,8 +55,16 @@ class UploadService:
                 "file_type": file_type,
                 "upload_time": upload_time,
             }
+
+            # Process the uploaded file to extract metadata and create a workspace.
+            DocumentReaderService(settings.UPLOAD_DIR).process_document(upload_response)
+
+            return upload_response
         except FileValidationError:
             raise
+        except DocumentReaderError as exc:
+            self.logger.error("Document reading failed after upload: %s", exc)
+            raise UploadProcessingError("Uploaded file could not be read for metadata extraction.") from exc
         except Exception as exc:
             self.logger.exception("Unexpected error while saving uploaded file.")
             raise UploadProcessingError("Failed to process upload.") from exc
