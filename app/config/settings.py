@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Multi-Modal Document Intelligence"
     PROJECT_VERSION: str = "0.1.0"
     LOG_FILE: Path = Path("logs/app.log")
+    UPLOAD_DIR: Path = Path("uploads")
+    MAX_UPLOAD_SIZE_MB: int = 20
 
     class Config:
         env_file = ".env"

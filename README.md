@@ -28,6 +28,9 @@ uvicorn app.main:app --reload
   - Returns `{ "message": "Multi-Modal Document Intelligence API Running" }`
 - `GET /health`
   - Returns `{ "status": "healthy" }`
+- `POST /upload`
+  - Accepts `multipart/form-data` and uploads files with extensions `.pdf`, `.docx`, `.png`, `.jpg`, `.jpeg`
+  - Returns upload metadata including `file_id`, `original_name`, `stored_name`, `file_size`, `file_type`, and `upload_time`
 
 ## Notes
 
