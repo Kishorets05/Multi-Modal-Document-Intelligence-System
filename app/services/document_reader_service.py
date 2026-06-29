@@ -6,6 +6,7 @@ from typing import Any
 
 from app.readers.reader_factory import ReaderFactory
 from app.config.settings import settings
+from app.services.text_extraction_service import TextExtractionError, TextExtractionService
 
 
 class DocumentReaderError(Exception):
@@ -62,6 +63,25 @@ class DocumentReaderService:
             "document_metadata": metadata.get("document_metadata"),
         }
 
+        # Extract plain text after metadata extraction and persist it to a workspace file.
+        text_service = TextExtractionService()
+        try:
+            extracted_text = text_service.extract(destination_file)
+            text_file = workspace_dir / "extracted_text.txt"
+            text_file.write_text(extracted_text, encoding="utf-8")
+            self.logger.info("Extracted text stored: %s", text_file)
+            document_metadata["text_extracted"] = True
+        except TextExtractionError as exc:
+            self.logger.warning(
+                "Text extraction failed for document '%s': %s", document_id, exc
+            )
+            document_metadata["text_extracted"] = False
+        except Exception as exc:
+            self.logger.exception(
+                "Unexpected error during text extraction for document '%s'.", document_id
+            )
+            document_metadata["text_extracted"] = False
+
         metadata_file = workspace_dir / "metadata.json"
         metadata_file.write_text(
             json.dumps(self._serialize(document_metadata), indent=2, ensure_ascii=False),
@@ -86,5 +106,3 @@ class DocumentReaderService:
         if isinstance(value, tuple):
             return [self._serialize(item) for item in value]
         return str(value)
-
-        return upload_response

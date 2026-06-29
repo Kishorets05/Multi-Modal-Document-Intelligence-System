@@ -28,6 +28,7 @@ class DocxReader:
             "image_width": None,
             "image_height": None,
             "document_size": self.file_path.stat().st_size,
+            "paragraphs": [p.text.strip() for p in paragraphs],
             "document_metadata": {
                 "core_properties": {
                     name: getattr(document.core_properties, name)
