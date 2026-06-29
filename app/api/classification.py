@@ -3,12 +3,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
 
+from app.config.settings import settings
 from app.schemas.classification import ClassificationResponse
 from app.services.document_classifier_service import (
     DocumentClassificationError,
     DocumentClassifierService,
 )
-from app.config.settings import settings
 
 router = APIRouter(tags=["classification"])
 
@@ -19,11 +19,13 @@ router = APIRouter(tags=["classification"])
     summary="Classify a document and return its semantic document type",
 )
 async def get_classification(document_id: str) -> ClassificationResponse:
-    """Run keyword-based classification on an uploaded document.
+    """Run weighted keyword classification on an uploaded document.
 
-    Reads ``extracted_text.txt`` produced by Module 3, scores keyword
-    matches for every supported category, and returns the winning class.
-    The result is also persisted to ``metadata.json`` as ``document_type``.
+    Reads ``extracted_text.txt`` produced by Module 3, computes a weighted
+    score for every supported category, applies per-category thresholds, and
+    returns the winning class together with a normalised confidence score and
+    the list of matched keywords.  The result is persisted to ``metadata.json``
+    as ``document_type``, ``confidence``, and ``matched_keywords``.
 
     Raises:
         404: If the document workspace, ``extracted_text.txt``, or
@@ -46,13 +48,13 @@ async def get_classification(document_id: str) -> ClassificationResponse:
 
     try:
         service = DocumentClassifierService()
-        document_type = service.classify_document(document_id)
+        result = service.classify_document(document_id)
     except DocumentClassificationError as exc:
         error_msg = str(exc)
         logger.error(
             "Classification failed — document_id: '%s': %s", document_id, error_msg
         )
-        # Surface the specific failure reason to the caller.
+        # Surface the specific failure reason with the correct HTTP status.
         if "not found" in error_msg:
             raise HTTPException(status_code=404, detail=error_msg)
         if "empty" in error_msg:
@@ -66,6 +68,7 @@ async def get_classification(document_id: str) -> ClassificationResponse:
 
     return ClassificationResponse(
         document_id=document_id,
-        document_type=document_type,
+        document_type=result["document_type"],
+        confidence=result["confidence"],
+        matched_keywords=result["matched_keywords"],
     )
-

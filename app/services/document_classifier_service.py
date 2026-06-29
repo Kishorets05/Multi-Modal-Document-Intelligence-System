@@ -27,14 +27,17 @@ class DocumentClassifierService:
         self.upload_dir = Path(upload_dir)
         self.logger = logging.getLogger("app")
 
-    def classify_document(self, document_id: str) -> str:
+    def classify_document(self, document_id: str) -> dict:
         """Classify the document and update metadata.json with the result.
 
         Args:
             document_id: The unique document identifier (workspace folder name).
 
         Returns:
-            The classified category string, e.g. 'resume', 'invoice'.
+            dict with keys:
+                document_type (str)   — the winning category.
+                confidence    (float) — normalised score in [0.0, 1.0].
+                matched_keywords (list[str]) — keywords that contributed to the score.
 
         Raises:
             DocumentClassificationError: If extracted_text.txt is missing,
@@ -70,11 +73,17 @@ class DocumentClassifierService:
 
         # --- Classify ------------------------------------------------------------
         classifier = ClassifierFactory.get_classifier()
-        document_type = classifier.classify(text)
+        result = classifier.classify(text)
 
         self.logger.info(
-            "Detected document type: '%s' — document_id: '%s'",
-            document_type,
+            "Matched keyword counts — document_id: '%s', matched: %s",
+            document_id,
+            result.matched_keywords,
+        )
+        self.logger.info(
+            "Selected document class: '%s' (confidence: %.4f) — document_id: '%s'",
+            result.document_type,
+            result.confidence,
             document_id,
         )
 
@@ -91,7 +100,10 @@ class DocumentClassifierService:
                 f"Failed to read metadata.json for document '{document_id}'."
             ) from exc
 
-        metadata["document_type"] = document_type
+        # Extend metadata — existing fields are never removed.
+        metadata["document_type"] = result.document_type
+        metadata["confidence"] = result.confidence
+        metadata["matched_keywords"] = result.matched_keywords
 
         try:
             metadata_file.write_text(
@@ -107,7 +119,11 @@ class DocumentClassifierService:
         self.logger.info(
             "Classification completed — document_id: '%s', document_type: '%s'",
             document_id,
-            document_type,
+            result.document_type,
         )
 
-        return document_type
+        return {
+            "document_type": result.document_type,
+            "confidence": result.confidence,
+            "matched_keywords": result.matched_keywords,
+        }
