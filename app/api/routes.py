@@ -5,6 +5,7 @@ from app.api.extraction import router as extraction_router
 from app.api.classification import router as classification_router
 from app.api.entity import router as entity_router
 from app.api.chunks import router as chunks_router
+from app.api.embeddings import router as embeddings_router
 
 router = APIRouter()
 router.include_router(upload_router)
@@ -12,6 +13,7 @@ router.include_router(extraction_router)
 router.include_router(classification_router)
 router.include_router(entity_router)
 router.include_router(chunks_router)
+router.include_router(embeddings_router)
 
 
 
