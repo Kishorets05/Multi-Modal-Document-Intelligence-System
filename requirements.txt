@@ -7,3 +7,4 @@ PyMuPDF
 python-docx
 Pillow
 paddleocr
+spacy>=3.7,<4.0

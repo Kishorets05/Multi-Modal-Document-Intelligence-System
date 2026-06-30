@@ -3,11 +3,14 @@ from fastapi import APIRouter
 from app.api.upload import router as upload_router
 from app.api.extraction import router as extraction_router
 from app.api.classification import router as classification_router
+from app.api.entity import router as entity_router
 
 router = APIRouter()
 router.include_router(upload_router)
 router.include_router(extraction_router)
 router.include_router(classification_router)
+router.include_router(entity_router)
+
 
 
 @router.get("/", summary="Root health check")
